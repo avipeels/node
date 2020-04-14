@@ -1,7 +1,8 @@
 const http = require('http');
-
+const fs = require('fs');
 const server = http.createServer(function (request, response) {
     const url = request.url;
+    const method = request.method;
     if (url === '/') {
         response.write('<html>');
         response.write('<head><title>Enter Message</title></head>');
@@ -9,7 +10,23 @@ const server = http.createServer(function (request, response) {
         response.write('</html>');
         return response.end();
     }
-    console.log(request.url, request.method, request.headers);
+    if (url === "/message" && method === "POST") {
+        const body = [];
+        request.on('data', (chunk) => {
+            console.log(chunk);
+            body.push(chunk);
+        });
+        request.on('end', () => {
+            const parsedBOdy = Buffer.concat(body).toString();
+            const message = parsedBOdy.split('=')[1];
+            fs.writeFile('message.txt', message, (err) => {
+                response.statusCode = 302;
+                response.setHeader('Location', '/');
+                return response.end();
+            });
+        });
+    }
+    // console.log(request.url, request.method, request.headers);
     response.setHeader('Content-Type', 'text/html');
     response.write('<html>');
     response.write('<head><title>Node Server</title></head>');
